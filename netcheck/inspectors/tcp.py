@@ -9,6 +9,7 @@ __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 
 from twisted.internet.protocol import Protocol, ClientFactory
 from twisted.internet import reactor
+from twisted.python import log
 
 
 class TCPInspectionProtocol(Protocol):
@@ -39,9 +40,11 @@ def do_tcp_check(audit):
 
     # sanity check
     if 'monitor_host' not in audit.detail:
+        log.err('missing monitor_hosts')
         return
 
     if 'monitor_port' not in audit.detail:
+        log.err('missing monitor_port')
         return
 
     reactor.connectTCP(audit.detail['monitor_host'],

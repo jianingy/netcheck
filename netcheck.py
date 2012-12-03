@@ -13,7 +13,7 @@ from twisted.python import log, usage
 from logging import DEBUG
 
 from netcheck import GlobalConfig, Informant
-from netcheck.inspectors import do_tcp_check, do_http_check
+from netcheck.inspectors import do_tcp_check, do_http_check, do_dns_check
 import re
 
 
@@ -59,7 +59,7 @@ class Audit(object):
 
             Informant.inform(self.detail['informant'], count, title, reason)
 
-        log.msg("FAIL: %s (%s)" % (title, reason))
+        print "FAIL: %s (%s)" % (title, reason)
 
     def count_failure(self):
         return self.failure_count[-1]
@@ -89,6 +89,8 @@ class Audit(object):
             return LoopingCall(do_http_check, audit=self)
         elif self.detail['type'] == 'tcp':
             return LoopingCall(do_tcp_check, self)
+        elif self.detail['type'] == 'dns':
+            return LoopingCall(do_dns_check, self)
         else:
             log.err('invalid inspection type: %s' % self.detail)
             return False
@@ -120,7 +122,9 @@ if __name__ == '__main__':
     config = GlobalConfig.create_instance(options['config'])
     Informant.create_instance(GlobalConfig.informant)
 
-    log.startLogging(sys.stdout)
-    map(lambda x: Audit(x).start(), GlobalConfig.inspector)
+    #log.startLogging(sys.stdout)
+    map(lambda x: Audit(x).start(),
+        filter(lambda x: 'disable' not in x or not x['disable'],
+               GlobalConfig.inspector))
 
     reactor.run()

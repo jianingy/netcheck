@@ -5,6 +5,7 @@
   monitor_url: http://www.google.com
   monitor_interval: 3
   title: "[%count%] %name%"
+  disable: 1
 
 -
   name: a2
@@ -12,6 +13,7 @@
   monitor_url: http://www.baidu.com
   monitor_interval: 3
   title: "[%count%] %name%"
+  disable: 1
 
 -
   name: a3
@@ -19,6 +21,7 @@
   monitor_url: http://blog.jianingy.com/aaaaaaaaa
   monitor_interval: 3
   title: "[%count%] %name%"
+  disable: 1
 
 -
   name: a4
@@ -26,5 +29,20 @@
   monitor_host: linuxnote.net
   monitor_port: 81
   monitor_interval: 3
+  informant: basic
+  title: "[%count%] %name%"
+  disable: 1
+
+-
+  name: dns1
+  type: dns
+  monitor_servers:
+    - 8.8.8.1
+  monitor_interval: 5
+  monitor_name: www.taobao.com
+  monitor_type: a
+  monitor_answer:
+    - 119.167.151.251
+    - 119.167.201.241
   informant: basic
   title: "[%count%] %name%"

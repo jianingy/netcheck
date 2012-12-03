@@ -9,6 +9,7 @@ __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 
 from twisted.web.client import getPage as http_request
 from twisted.python.failure import Failure
+from twisted.python import log
 
 
 def done_http_check(value, audit):
@@ -21,6 +22,7 @@ def done_http_check(value, audit):
 
 def do_http_check(audit):
     if 'monitor_url' not in audit.detail:
+        log.err('monitor_url')
         return
     d = http_request(audit.detail['monitor_url'])
     d.addBoth(done_http_check, audit)
