@@ -1,0 +1,30 @@
+---
+-
+  name: a1
+  type: http
+  monitor_url: http://www.google.com
+  monitor_interval: 3
+  title: "[%count%] %name%"
+
+-
+  name: a2
+  type: http
+  monitor_url: http://www.baidu.com
+  monitor_interval: 3
+  title: "[%count%] %name%"
+
+-
+  name: a3
+  type: http
+  monitor_url: http://blog.jianingy.com/aaaaaaaaa
+  monitor_interval: 3
+  title: "[%count%] %name%"
+
+-
+  name: a4
+  type: tcp
+  monitor_host: linuxnote.net
+  monitor_port: 81
+  monitor_interval: 3
+  informant: basic
+  title: "[%count%] %name%"

@@ -31,19 +31,19 @@ class TCPInspectionClientFactory(ClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         self.audit.fail("%s:%s is unreachable" %
-                        (self.audit.inspect_item['monitor_host'],
-                         self.audit.inspect_item['monitor_port']))
+                        (self.audit.detail['monitor_host'],
+                         self.audit.detail['monitor_port']))
 
 
 def do_tcp_check(audit):
 
     # sanity check
-    if 'monitor_host' not in audit.inspect_item:
+    if 'monitor_host' not in audit.detail:
         return
 
-    if 'monitor_port' not in audit.inspect_item:
+    if 'monitor_port' not in audit.detail:
         return
 
-    reactor.connectTCP(audit.inspect_item['monitor_host'],
-                       audit.inspect_item['monitor_port'],
+    reactor.connectTCP(audit.detail['monitor_host'],
+                       audit.detail['monitor_port'],
                        TCPInspectionClientFactory(audit))

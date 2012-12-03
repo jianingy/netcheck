@@ -14,13 +14,13 @@ from twisted.python.failure import Failure
 def done_http_check(value, audit):
 
     if isinstance(value, Failure):
-        audit.fail("%s is unreachable" % audit.inspect_item['monitor_url'])
+        audit.fail("%s is unreachable" % audit.detail['monitor_url'])
     else:
         audit.success()
 
 
 def do_http_check(audit):
-    if 'monitor_url' not in audit.inspect_item:
+    if 'monitor_url' not in audit.detail:
         return
-    d = http_request(audit.inspect_item['monitor_url'])
+    d = http_request(audit.detail['monitor_url'])
     d.addBoth(done_http_check, audit)

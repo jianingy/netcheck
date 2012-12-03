@@ -10,16 +10,19 @@ __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 from twisted.python.failure import Failure
 from twisted.python import log
 
+from config import GlobalConfig
 
-def sendmail(to_addr, reason):
+
+def sendmail(to_addr, title, reason):
     from twisted.mail.smtp import sendmail as do_sendmail
     from email.mime.text import MIMEText
 
-    host = 'localhost'
-    from_addr = 'root@localhost'
+    host = GlobalConfig.mail['host']
+    #port = GlobalConfig.mail['port']
+    from_addr = GlobalConfig.mail['from']
 
     msg = MIMEText(reason)
-    msg['Subject'] = reason
+    msg['Subject'] = title
     msg['From'] = from_addr
     msg['To'] = to_addr
 
@@ -31,22 +34,24 @@ def sendmail(to_addr, reason):
 def done_sendmail(value):
     if isinstance(value, Failure):
         log.err("failed to send mail: %s" % value)
+    else:
+        log.msg("mail sent: %s" % str(value))
 
 
-class Notifier(object):
+class Informant(object):
 
     __instance__ = None
     __rule__ = dict()
 
     def __new__(cls, *args, **kw):
         if not cls.__instance__:
-            cls.__instance__ = super(Notifier, cls).__new__(
+            cls.__instance__ = super(Informant, cls).__new__(
                 cls, *args, **kw)
         return cls.__instance__
 
     @staticmethod
     def create_instance(rules):
-        instance = Notifier()
+        instance = Informant()
         for name, value in rules.items():
             value.sort(cmp=lambda x, y:
                        y['failure_count'] - x['failure_count'])
@@ -55,12 +60,12 @@ class Notifier(object):
     @staticmethod
     def select_rule(name, failure_count):
 
-        if name not in Notifier.__rule__:
+        if name not in Informant.__rule__:
             log.err('rule %s does not exist' % name)
             return
 
         selected = None
-        for rule in Notifier.__rule__[name]:
+        for rule in Informant.__rule__[name]:
             if 'failure_count' not in rule:
                 log.err('missing failure_count in rule %s' % name)
                 continue
@@ -73,10 +78,10 @@ class Notifier(object):
         return None
 
     @staticmethod
-    def notify(name, failure_count, reason):
+    def inform(name, failure_count, title, reason):
 
-        rule = Notifier.select_rule(name, failure_count)
+        rule = Informant.select_rule(name, failure_count)
         if not rule: return
 
         if 'mail' in rule:
-                sendmail(rule['mail'], reason)
+                sendmail(rule['mail'], title, reason)

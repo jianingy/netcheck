@@ -7,36 +7,59 @@
 
 __author__ = 'Jianing Yang <jianingy.yang AT gmail DOT com>'
 
-from yaml import load as yaml_load
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 from twisted.python import log, usage
 from logging import DEBUG
 
-from netinspect import do_tcp_check, do_http_check
-from notifier import Notifier
+from netcheck import GlobalConfig, Informant
+from netcheck.inspectors import do_tcp_check, do_http_check
+import re
 
 
 class Audit(object):
 
     num_failure_trace = 10
-    notifier = Notifier()
+    informant = Informant()
+    repl_re = re.compile('%(\w+)%')
 
-    def __init__(self, item):
-        self.inspect_item = item
+    def __init__(self, detail):
+        self.detail = detail
         self.inspector = self.__init_inspector()
         self.failure_count = [0]
+        self.vars = dict(detail)
+
+    def replace_variable(self, s):
+
+        def _replace(x):
+            if x.group(1) in self.vars:
+                return str(self.vars[x.group(1)])
+            else:
+                return x.group(0)
+
+        return self.repl_re.sub(_replace, s)
 
     def success(self):
         self.reset_failure()
-        #log.msg("SUCCESS: %s" % self.inspect_item)
 
     def fail(self, reason=""):
         self.increase_failure()
         count = self.count_failure()
-        if count > 0 and 'notifier' in self.inspect_item:
-            Notifier.notify(self.inspect_item['notifier'], count, reason)
-        log.msg("FAIL: %s (%s)" % (self.inspect_item, self.failure_count))
+
+        self.vars['count'] = count
+
+        if 'title' in self.detail:
+            title = self.detail['title']
+        else:
+            title = reason
+
+        title = self.replace_variable(title)
+
+        if count > 0 and 'informant' in self.detail:
+
+            Informant.inform(self.detail['informant'], count, title, reason)
+
+        log.msg("FAIL: %s (%s)" % (title, reason))
 
     def count_failure(self):
         return self.failure_count[-1]
@@ -52,31 +75,29 @@ class Audit(object):
     def start(self):
         # sanity check
 
-        if 'monitor_interval' not in self.inspect_item:
-            log.err('missing monitor_interval: %s' % self.inspect_item)
+        if 'monitor_interval' not in self.detail:
+            log.err('missing monitor_interval: %s' % self.detail)
             return False
 
-        log.msg("Starting inspector on %s" % self.inspect_item, level=DEBUG)
-        interval = int(self.inspect_item['monitor_interval'])
+        log.msg("Starting inspector on %s" % self.detail, level=DEBUG)
+        interval = int(self.detail['monitor_interval'])
         self.inspector.start(interval)
 
     def __init_inspector(self):
 
-        if self.inspect_item['type'] == 'http':
+        if self.detail['type'] == 'http':
             return LoopingCall(do_http_check, audit=self)
-        elif self.inspect_item['type'] == 'tcp':
+        elif self.detail['type'] == 'tcp':
             return LoopingCall(do_tcp_check, self)
         else:
-            log.err('invalid inspection type: %s' % self.inspect_item)
+            log.err('invalid inspection type: %s' % self.detail)
             return False
 
 
 class Options(usage.Options):
 
     optParameters = [
-        ["inspect", "i", "conf/netcheck.yaml", "Inspection configuration"],
-        ["notify", "n", "conf/notify.yaml", "Notification configuration"],
-        #["max-process", "m", "1", "Number of processes"],
+        ["config", "c", "conf/netcheck.yaml", "Configuration"],
     ]
 
 
@@ -96,18 +117,10 @@ if __name__ == '__main__':
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(1)
 
-    inspect_items = yaml_load(file(options['inspect']).read())
-    Notifier.create_instance(yaml_load(file(options['notify']).read()))
-    rule = Notifier()
-    print rule.__rule__
+    config = GlobalConfig.create_instance(options['config'])
+    Informant.create_instance(GlobalConfig.informant)
 
-    """
-    import math
-    num_process = int(options['max-process'])
-    chunk_size = int(math.ceil(float(len(inspect_items)) / float(num_process)))
-    for items in chunk(inspect_items, chunk_size):
-        pass
-    """
     log.startLogging(sys.stdout)
-    map(lambda x: Audit(x).start(), inspect_items)
+    map(lambda x: Audit(x).start(), GlobalConfig.inspector)
+
     reactor.run()

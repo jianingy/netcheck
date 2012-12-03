@@ -1,22 +1,7 @@
 ---
--
-  type: http
-  monitor_url: http://www.google.com
-  monitor_interval: 3
-
--
-  type: http
-  monitor_url: http://www.baidu.com
-  monitor_interval: 3
-
--
-  type: http
-  monitor_url: http://blog.jianingy.com/aaaaaaaaa
-  monitor_interval: 3
-
--
-  type: tcp
-  monitor_host: linuxnote.net
-  monitor_port: 81
-  monitor_interval: 3
-  notifier: basic
+inspector: file://conf/inspector.yaml
+informant: file://conf/informant.yaml
+mail:
+    host: localhost
+    from: jianingy@localhost
+    subject_prefix: [netcheck]
